@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: jobtracker
+  config:
+    import: optional:file:.env[.properties]
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+  flyway:
+    enabled: true
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiry-ms: ${JWT_EXPIRY_MS}
+  refresh-token-expiry-days: ${REFRESH_TOKEN_EXPIRY_DAYS}
+
+openai:
+  api-key: ${OPENAI_API_KEY}
