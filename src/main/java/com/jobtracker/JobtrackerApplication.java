@@ -2,12 +2,14 @@ package com.jobtracker;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
+@EnableJpaAuditing
 @SpringBootApplication
-public class JobTrackerApplication {
+public class JobtrackerApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(JobTrackerApplication.class, args);
+        SpringApplication.run(JobtrackerApplication.class, args);
     }
 
 }
