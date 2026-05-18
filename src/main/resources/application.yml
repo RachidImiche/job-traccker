@@ -1,3 +1,4 @@
+
 spring:
   application:
     name: jobtracker
@@ -26,3 +27,5 @@ jwt:
 
 openai:
   api-key: ${OPENAI_API_KEY}
+server:
+  port: 9090
