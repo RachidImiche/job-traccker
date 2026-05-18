@@ -13,6 +13,7 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Date;
+import java.util.Objects;
 import java.util.UUID;
 
 @Slf4j
@@ -45,6 +46,14 @@ public class JwtService {
         return extractClaims(token) != null;
     }
 
+    public boolean validateAccessToken(String token) {
+        return hasType(token, "access");
+    }
+
+    public boolean validateRefreshToken(String token) {
+        return hasType(token, "refresh");
+    }
+
     public String extractEmail(String token) {
         Claims claims = extractClaims(token);
         if (claims == null) {
@@ -64,6 +73,15 @@ public class JwtService {
             log.debug("Invalid JWT token: {}", e.getMessage());
             return null;
         }
+    }
+
+    private boolean hasType(String token, String expectedType) {
+        Claims claims = extractClaims(token);
+        if (claims == null) {
+            return false;
+        }
+
+        return Objects.equals(expectedType, claims.get("type", String.class));
     }
 
     private String buildToken(User user, long expiryMs, String type) {

@@ -1,0 +1,12 @@
+spring:
+  docker:
+    compose:
+      enabled: false
+
+jwt:
+  secret: test-secret-key-with-at-least-thirty-two-bytes
+  expiry-ms: 900000
+  refresh-token-expiry-days: 7
+
+openai:
+  api-key: test-key
