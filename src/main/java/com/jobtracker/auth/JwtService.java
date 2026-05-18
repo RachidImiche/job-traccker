@@ -62,6 +62,25 @@ public class JwtService {
         return claims.getSubject();
     }
 
+    public UUID extractUserId(String token) {
+        Claims claims = extractClaims(token);
+        if (claims == null) {
+            return null;
+        }
+
+        String userId = claims.get("userId", String.class);
+        if (userId == null) {
+            return null;
+        }
+
+        try {
+            return UUID.fromString(userId);
+        } catch (IllegalArgumentException e) {
+            log.debug("Invalid userId claim in JWT token: {}", e.getMessage());
+            return null;
+        }
+    }
+
     private Claims extractClaims(String token) {
         try {
             return Jwts.parser()

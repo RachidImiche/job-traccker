@@ -1,5 +1,6 @@
 package com.jobtracker.shared.security;
 
+import com.jobtracker.auth.api.AuthenticatedUser;
 import com.jobtracker.auth.JwtService;
 import com.jobtracker.user.UserRepository;
 import jakarta.servlet.FilterChain;
@@ -41,14 +42,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             if (jwtService.validateAccessToken(token)) {
                 String email = jwtService.extractEmail(token);
+                java.util.UUID userId = jwtService.extractUserId(token);
 
-                if (email != null) {
-                    userRepository.findByEmail(email).ifPresent(user -> {
-                        UsernamePasswordAuthenticationToken authentication =
-                                new UsernamePasswordAuthenticationToken(user, null, Collections.emptyList());
-                        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                        SecurityContextHolder.getContext().setAuthentication(authentication);
-                    });
+                if (email != null && userId != null && userRepository.existsById(userId)) {
+                    AuthenticatedUser authenticatedUser = new AuthenticatedUser(userId, email);
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(authenticatedUser, null, Collections.emptyList());
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
             }
         }
