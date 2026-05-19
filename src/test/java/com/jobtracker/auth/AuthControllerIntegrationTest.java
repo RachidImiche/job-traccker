@@ -1,5 +1,6 @@
 package com.jobtracker.auth;
 
+import com.jobtracker.application.JobApplicationRepository;
 import com.jobtracker.application.TestcontainersConfiguration;
 import com.jobtracker.auth.dto.CreateUserRequest;
 import com.jobtracker.auth.dto.LoginRequest;
@@ -40,12 +41,16 @@ class AuthControllerIntegrationTest {
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
 
+    @Autowired
+    private JobApplicationRepository jobApplicationRepository;
+
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
                 .apply(SecurityMockMvcConfigurers.springSecurity())
                 .build();
         refreshTokenRepository.deleteAll();
+        jobApplicationRepository.deleteAll();
         userRepository.deleteAll();
     }
 
