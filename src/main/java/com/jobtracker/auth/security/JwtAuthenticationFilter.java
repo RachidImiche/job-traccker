@@ -1,7 +1,7 @@
-package com.jobtracker.shared.security;
+package com.jobtracker.auth.security;
 
-import com.jobtracker.auth.api.AuthenticatedUser;
 import com.jobtracker.auth.JwtService;
+import com.jobtracker.shared.security.AuthenticatedUser;
 import com.jobtracker.user.UserRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

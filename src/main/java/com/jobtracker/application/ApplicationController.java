@@ -4,8 +4,10 @@ import com.jobtracker.application.dto.ApplicationResponse;
 import com.jobtracker.application.dto.CreateApplicationRequest;
 import com.jobtracker.application.dto.UpdateStatusRequest;
 import com.jobtracker.application.dto.UpdateApplicationRequest;
-import com.jobtracker.auth.api.AuthenticatedUser;
 import com.jobtracker.shared.exception.AppException;
+import com.jobtracker.shared.security.AuthenticatedUser;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,6 +32,7 @@ import java.util.UUID;
 @Validated
 @RestController
 @RequestMapping("/api/v1/applications")
+@Tag(name = "Applications", description = "Manage job applications and status transitions")
 public class ApplicationController {
 
     private final ApplicationService applicationService;
@@ -39,24 +42,28 @@ public class ApplicationController {
     }
 
     @PostMapping
+    @Operation(summary = "Create a new job application")
     public ResponseEntity<ApplicationResponse> create(@Valid @RequestBody CreateApplicationRequest request) {
         ApplicationResponse response = applicationService.create(currentUserId(), request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping
+    @Operation(summary = "List all job applications for the current user")
     public ResponseEntity<Page<ApplicationResponse>> getAll(@PageableDefault(size = 20) Pageable pageable) {
         Page<ApplicationResponse> response = applicationService.getAll(currentUserId(), pageable);
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "Get a single job application by id")
     public ResponseEntity<ApplicationResponse> getById(@PathVariable UUID id) {
         ApplicationResponse response = applicationService.getById(currentUserId(), id);
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Update fields on a job application")
     public ResponseEntity<ApplicationResponse> update(@PathVariable UUID id,
                                                       @Valid @RequestBody UpdateApplicationRequest request) {
         ApplicationResponse response = applicationService.update(currentUserId(), id, request);
@@ -64,6 +71,7 @@ public class ApplicationController {
     }
 
     @PatchMapping("/{id}/status")
+    @Operation(summary = "Update the status of a job application")
     public ResponseEntity<ApplicationResponse> updateStatus(@PathVariable UUID id,
                                                             @Valid @RequestBody UpdateStatusRequest request) {
         ApplicationResponse response = applicationService.updateStatus(currentUserId(), id, request.status());
@@ -71,6 +79,7 @@ public class ApplicationController {
     }
 
     @DeleteMapping("/{id}")
+    @Operation(summary = "Delete a job application")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         applicationService.delete(currentUserId(), id);
         return ResponseEntity.noContent().build();
