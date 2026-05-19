@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -34,11 +35,21 @@ class ApplicationServiceTest {
     @Mock
     private JobApplicationRepository jobApplicationRepository;
 
+    @Mock
+    private StatusTransitionValidator statusTransitionValidator;
+
+    @Mock
+    private ApplicationStatusHistoryRepository applicationStatusHistoryRepository;
+
     private ApplicationService applicationService;
 
     @BeforeEach
     void setUp() {
-        applicationService = new ApplicationService(jobApplicationRepository);
+        applicationService = new ApplicationService(
+                jobApplicationRepository,
+                statusTransitionValidator,
+                applicationStatusHistoryRepository
+        );
     }
 
     @Test
@@ -224,6 +235,50 @@ class ApplicationServiceTest {
         assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
         assertEquals("Application not found", exception.getMessage());
         verify(jobApplicationRepository).findByIdAndUserId(applicationId, userId);
+    }
+
+    @Test
+    void updateStatus_updatesStatusSavesHistoryAndReturnsResponse() {
+        UUID userId = UUID.randomUUID();
+        UUID applicationId = UUID.randomUUID();
+        JobApplication existing = application(applicationId, userId, "Acme", "Engineer", "Remote");
+
+        when(jobApplicationRepository.findByIdAndUserId(applicationId, userId)).thenReturn(Optional.of(existing));
+        when(jobApplicationRepository.save(existing)).thenReturn(existing);
+
+        ApplicationResponse response = applicationService.updateStatus(userId, applicationId, ApplicationStatus.INTERVIEW);
+
+        assertEquals(ApplicationStatus.INTERVIEW, existing.getStatus());
+        assertEquals(ApplicationStatus.INTERVIEW, response.status());
+
+        verify(statusTransitionValidator).validate(ApplicationStatus.APPLIED, ApplicationStatus.INTERVIEW);
+        verify(jobApplicationRepository).save(existing);
+
+        ArgumentCaptor<ApplicationStatusHistory> historyCaptor = ArgumentCaptor.forClass(ApplicationStatusHistory.class);
+        verify(applicationStatusHistoryRepository).save(historyCaptor.capture());
+        ApplicationStatusHistory history = historyCaptor.getValue();
+
+        assertEquals(applicationId, history.getApplicationId());
+        assertEquals(ApplicationStatus.APPLIED, history.getOldStatus());
+        assertEquals(ApplicationStatus.INTERVIEW, history.getNewStatus());
+        assertNotNull(history.getChangedAt());
+    }
+
+    @Test
+    void updateStatus_throwsNotFoundWhenApplicationDoesNotExistOrIsNotOwned() {
+        UUID userId = UUID.randomUUID();
+        UUID applicationId = UUID.randomUUID();
+
+        when(jobApplicationRepository.findByIdAndUserId(applicationId, userId)).thenReturn(Optional.empty());
+
+        AppException exception = assertThrows(AppException.class,
+                () -> applicationService.updateStatus(userId, applicationId, ApplicationStatus.INTERVIEW));
+
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+        assertEquals("Application not found", exception.getMessage());
+        verify(jobApplicationRepository).findByIdAndUserId(applicationId, userId);
+        verifyNoInteractions(statusTransitionValidator);
+        verifyNoInteractions(applicationStatusHistoryRepository);
     }
 
     private JobApplication application(UUID id, UUID userId, String companyName, String roleTitle, String location) {

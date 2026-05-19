@@ -17,9 +17,15 @@ import java.util.UUID;
 public class ApplicationService {
 
     private final JobApplicationRepository jobApplicationRepository;
+    private final StatusTransitionValidator statusTransitionValidator;
+    private final ApplicationStatusHistoryRepository applicationStatusHistoryRepository;
 
-    public ApplicationService(JobApplicationRepository jobApplicationRepository) {
+    public ApplicationService(JobApplicationRepository jobApplicationRepository,
+                              StatusTransitionValidator statusTransitionValidator,
+                              ApplicationStatusHistoryRepository applicationStatusHistoryRepository) {
         this.jobApplicationRepository = jobApplicationRepository;
+        this.statusTransitionValidator = statusTransitionValidator;
+        this.applicationStatusHistoryRepository = applicationStatusHistoryRepository;
     }
 
     @Transactional
@@ -88,6 +94,27 @@ public class ApplicationService {
     public void delete(UUID userId, UUID applicationId) {
         JobApplication application = findOwnedApplication(userId, applicationId);
         jobApplicationRepository.delete(application);
+    }
+
+    @Transactional
+    public ApplicationResponse updateStatus(UUID userId, UUID applicationId, ApplicationStatus newStatus) {
+        JobApplication application = findOwnedApplication(userId, applicationId);
+        ApplicationStatus oldStatus = application.getStatus();
+
+        statusTransitionValidator.validate(oldStatus, newStatus);
+
+        application.setStatus(newStatus);
+        JobApplication savedApplication = jobApplicationRepository.save(application);
+
+        ApplicationStatusHistory statusHistory = ApplicationStatusHistory.builder()
+                .applicationId(applicationId)
+                .oldStatus(oldStatus)
+                .newStatus(newStatus)
+                .changedAt(LocalDateTime.now())
+                .build();
+        applicationStatusHistoryRepository.save(statusHistory);
+
+        return toResponse(savedApplication);
     }
 
     private JobApplication findOwnedApplication(UUID userId, UUID applicationId) {

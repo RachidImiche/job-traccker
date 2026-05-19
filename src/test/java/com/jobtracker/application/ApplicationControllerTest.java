@@ -20,6 +20,7 @@ import java.util.Map;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -131,6 +132,33 @@ class ApplicationControllerTest {
                 .andExpect(status().isNotFound());
     }
 
+    @Test
+    void updateStatus_transitionsApplicationStatus() throws Exception {
+        String accessToken = registerAndGetAccessToken("app.status.update@example.com");
+        String applicationId = createApplication(accessToken, "Acme", "Backend Engineer", "https://acme.example/jobs/6");
+
+        mockMvc.perform(patch("/api/v1/applications/{id}/status", applicationId)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(accessToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updateStatusPayload("INTERVIEW")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(applicationId))
+                .andExpect(jsonPath("$.status").value("INTERVIEW"));
+    }
+
+    @Test
+    void updateStatus_returnsBadRequestForIllegalTransition() throws Exception {
+        String accessToken = registerAndGetAccessToken("app.status.invalid@example.com");
+        String applicationId = createApplication(accessToken, "Acme", "Backend Engineer", "https://acme.example/jobs/7");
+
+        mockMvc.perform(patch("/api/v1/applications/{id}/status", applicationId)
+                        .header(HttpHeaders.AUTHORIZATION, bearer(accessToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(updateStatusPayload("OFFER")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Illegal status transition from APPLIED to OFFER. Allowed transitions: APPLIED->INTERVIEW, APPLIED->REJECTED, INTERVIEW->OFFER, INTERVIEW->REJECTED, any->WITHDRAWN."));
+    }
+
     private String registerAndGetAccessToken(String email) throws Exception {
         String response = mockMvc.perform(post("/api/v1/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -191,5 +219,13 @@ class ApplicationControllerTest {
                   \"jobUrl\": \"%s\"
                 }
                 """.formatted(companyName, jobUrl);
+    }
+
+    private String updateStatusPayload(String status) {
+        return """
+                {
+                  \"status\": \"%s\"
+                }
+                """.formatted(status);
     }
 }
