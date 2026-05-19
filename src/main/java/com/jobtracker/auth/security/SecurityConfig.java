@@ -1,4 +1,4 @@
-package com.jobtracker.shared.security;
+package com.jobtracker.auth.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

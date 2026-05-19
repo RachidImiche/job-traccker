@@ -1,5 +1,6 @@
 package com.jobtracker.user;
 
+import com.jobtracker.application.JobApplicationRepository;
 import com.jobtracker.application.TestcontainersConfiguration;
 import com.jobtracker.auth.internal.RefreshTokenRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,12 +38,16 @@ class UserControllerIntegrationTest {
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
 
+    @Autowired
+    private JobApplicationRepository jobApplicationRepository;
+
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
                 .apply(SecurityMockMvcConfigurers.springSecurity())
                 .build();
         refreshTokenRepository.deleteAll();
+        jobApplicationRepository.deleteAll();
         userRepository.deleteAll();
     }
 
